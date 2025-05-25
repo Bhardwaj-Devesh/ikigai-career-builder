@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 
 export interface IkigaiResponse {
@@ -31,6 +30,7 @@ interface IkigaiStore {
   reset: () => void;
   generateAnalysis: (userId: string) => Promise<void>;
   setShowReport: (show: boolean) => void;
+  setAnalysisReport: (report: any) => void;
 }
 
 export const useIkigaiStore = create<IkigaiStore>((set, get) => ({
@@ -115,18 +115,24 @@ export const useIkigaiStore = create<IkigaiStore>((set, get) => ({
 
       console.log('Responses saved successfully:', responseData);
 
-      // Call the analysis function
-      const { data: analysisData, error: analysisError } = await supabase.functions.invoke('generate-career-analysis', {
-        body: {
+      // Call the analysis API
+      const response = await fetch('http://localhost:3000/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           ikigaiResponseId: responseData.id,
           responses: responses
-        }
+        })
       });
 
-      if (analysisError) {
-        console.error('Analysis error:', analysisError);
-        throw new Error(`Analysis failed: ${analysisError.message}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Analysis generation failed');
       }
+
+      const analysisData = await response.json();
 
       if (!analysisData?.success) {
         console.error('Analysis data error:', analysisData);
@@ -143,16 +149,10 @@ export const useIkigaiStore = create<IkigaiStore>((set, get) => ({
 
     } catch (error) {
       console.error('Error generating analysis:', error);
-      set({ 
-        isGeneratingReport: false 
-      });
-      
-      // Add error message to chat
-      get().addMessage({
-        type: 'ai',
-        content: `I apologize, but there was an error generating your career analysis: ${error.message}. Please try again in a moment.`
-      });
+      set({ isGeneratingReport: false });
+      throw error;
     }
   },
   setShowReport: (show) => set({ showReport: show }),
+  setAnalysisReport: (report) => set({ analysisReport: report }),
 }));

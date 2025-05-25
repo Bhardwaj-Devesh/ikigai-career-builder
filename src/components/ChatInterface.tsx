@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 import { useIkigaiStore } from '@/store/ikigaiStore';
 import { useAuth } from './AuthProvider';
@@ -24,17 +23,19 @@ export const ChatInterface = () => {
     isTyping,
     isComplete,
     isGeneratingReport,
-    analysisReport,
-    showReport,
     addMessage,
     updateResponse,
     setTyping,
     nextStep,
-    generateAnalysis,
+    responses,
     setShowReport,
+    setAnalysisReport,
+    showReport,
+    analysisReport,
   } = useIkigaiStore();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const initialMessageSent = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -46,7 +47,8 @@ export const ChatInterface = () => {
 
   useEffect(() => {
     // Initialize with first question
-    if (messages.length === 0 && user) {
+    if (messages.length === 0 && user && !initialMessageSent.current) {
+      initialMessageSent.current = true;
       setTimeout(() => {
         addMessage({
           type: 'ai',
@@ -101,7 +103,37 @@ export const ChatInterface = () => {
       content: "🔄 Excellent! I'm now generating your comprehensive career analysis. This may take a moment as I analyze your responses, research market trends, and create personalized recommendations. Please wait while I work my magic..."
     });
 
-    await generateAnalysis(user.id);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          responses: {
+            love: responses.love,
+            goodAt: responses.goodAt,
+            paidFor: responses.paidFor,
+            worldNeeds: responses.worldNeeds
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate analysis');
+      }
+
+      const data = await response.json();
+      setAnalysisReport(data.analysis);
+      setShowReport(true);
+    } catch (error) {
+      console.error('Error generating analysis:', error);
+      addMessage({
+        type: 'ai',
+        content: "I apologize, but I encountered an error while generating your analysis. Please try again later."
+      });
+    }
   };
 
   return (
