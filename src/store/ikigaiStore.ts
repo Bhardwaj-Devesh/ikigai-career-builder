@@ -91,6 +91,9 @@ export const useIkigaiStore = create<IkigaiStore>((set, get) => ({
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
+      console.log('Saving responses for user:', userId);
+      console.log('Responses data:', responses);
+      
       // Save the responses with actual user ID
       const { data: responseData, error: responseError } = await supabase
         .from('ikigai_responses')
@@ -106,8 +109,11 @@ export const useIkigaiStore = create<IkigaiStore>((set, get) => ({
         .single();
 
       if (responseError) {
+        console.error('Database error:', responseError);
         throw new Error(`Failed to save responses: ${responseError.message}`);
       }
+
+      console.log('Responses saved successfully:', responseData);
 
       // Call the analysis function
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('generate-career-analysis', {
@@ -118,12 +124,16 @@ export const useIkigaiStore = create<IkigaiStore>((set, get) => ({
       });
 
       if (analysisError) {
+        console.error('Analysis error:', analysisError);
         throw new Error(`Analysis failed: ${analysisError.message}`);
       }
 
-      if (!analysisData.success) {
-        throw new Error(analysisData.error || 'Analysis generation failed');
+      if (!analysisData?.success) {
+        console.error('Analysis data error:', analysisData);
+        throw new Error(analysisData?.error || 'Analysis generation failed');
       }
+
+      console.log('Analysis generated successfully:', analysisData.analysis);
 
       set({ 
         analysisReport: analysisData.analysis,

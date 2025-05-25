@@ -29,41 +29,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-        
-        // Create or update user profile when user signs in
-        if (session?.user && event === 'SIGNED_IN') {
-          setTimeout(async () => {
-            try {
-              const { data: existingProfile } = await supabase
-                .from('user_profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
-
-              if (!existingProfile) {
-                await supabase
-                  .from('user_profiles')
-                  .insert({
-                    id: session.user.id,
-                    email: session.user.email,
-                    full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
-                    avatar_url: session.user.user_metadata?.avatar_url,
-                  });
-              }
-            } catch (error) {
-              console.log('Profile creation handled by trigger or already exists');
-            }
-          }, 0);
-        }
       }
     );
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -73,22 +49,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}`,
-      },
-    });
-    if (error) {
-      console.error('Error signing in with Google:', error);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}`,
+        },
+      });
+      
+      if (error) {
+        console.error('Error signing in with Google:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Sign in error:', error);
       throw error;
     }
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error signing out:', error);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Sign out error:', error);
       throw error;
     }
   };
