@@ -29,7 +29,7 @@ interface IkigaiStore {
   setTyping: (typing: boolean) => void;
   nextStep: () => void;
   reset: () => void;
-  generateAnalysis: () => Promise<void>;
+  generateAnalysis: (userId: string) => Promise<void>;
   setShowReport: (show: boolean) => void;
 }
 
@@ -84,18 +84,18 @@ export const useIkigaiStore = create<IkigaiStore>((set, get) => ({
     analysisReport: null,
     showReport: false,
   }),
-  generateAnalysis: async () => {
+  generateAnalysis: async (userId: string) => {
     const { responses } = get();
     set({ isGeneratingReport: true });
 
     try {
-      // First, save the responses to get an ID
       const { supabase } = await import('@/integrations/supabase/client');
       
+      // Save the responses with actual user ID
       const { data: responseData, error: responseError } = await supabase
         .from('ikigai_responses')
         .insert({
-          user_id: 'anonymous', // For now, using anonymous
+          user_id: userId,
           love: responses.love,
           good_at: responses.goodAt,
           paid_for: responses.paidFor,

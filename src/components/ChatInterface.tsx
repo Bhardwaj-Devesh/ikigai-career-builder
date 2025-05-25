@@ -1,8 +1,11 @@
+
 import { useEffect, useRef } from 'react';
 import { useIkigaiStore } from '@/store/ikigaiStore';
+import { useAuth } from './AuthProvider';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { CareerReport } from './CareerReport';
+import { Button } from '@/components/ui/button';
 
 const IKIGAI_QUESTIONS = [
   "Hello! I'm your AI career companion. I'm here to help you discover your Ikigai - your reason for being. Let's start with the first question: What activities, subjects, or causes make you feel truly alive and passionate? What do you LOVE doing?",
@@ -14,6 +17,7 @@ const IKIGAI_QUESTIONS = [
 const RESPONSE_KEYS = ['love', 'goodAt', 'paidFor', 'worldNeeds'] as const;
 
 export const ChatInterface = () => {
+  const { user, signOut } = useAuth();
   const {
     messages,
     currentStep,
@@ -31,7 +35,6 @@ export const ChatInterface = () => {
   } = useIkigaiStore();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const lastMessageRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -43,15 +46,15 @@ export const ChatInterface = () => {
 
   useEffect(() => {
     // Initialize with first question
-    if (messages.length === 0) {
+    if (messages.length === 0 && user) {
       setTimeout(() => {
         addMessage({
           type: 'ai',
-          content: IKIGAI_QUESTIONS[0],
+          content: `Hello ${user.user_metadata?.full_name || user.email}! ${IKIGAI_QUESTIONS[0]}`,
         });
       }, 1000);
     }
-  }, []);
+  }, [user, messages.length]);
 
   const handleSendMessage = (message: string) => {
     if (currentStep >= 4) return;
@@ -91,20 +94,41 @@ export const ChatInterface = () => {
   };
 
   const handleGenerateAnalysis = async () => {
+    if (!user) return;
+    
     addMessage({
       type: 'ai',
       content: "🔄 Excellent! I'm now generating your comprehensive career analysis. This may take a moment as I analyze your responses, research market trends, and create personalized recommendations. Please wait while I work my magic..."
     });
 
-    await generateAnalysis();
+    await generateAnalysis(user.id);
   };
 
   return (
     <>
       <div className="flex flex-col h-full bg-gradient-to-br from-purple-50 via-pink-50 to-yellow-50">
+        {/* Header with user info and logout */}
+        <div className="bg-white/80 backdrop-blur-sm border-b border-white/20 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <img 
+                src={user?.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${user?.email}&background=random`}
+                alt="Profile"
+                className="w-8 h-8 rounded-full"
+              />
+              <span className="text-sm text-gray-700">
+                Welcome, {user?.user_metadata?.full_name || user?.email}
+              </span>
+            </div>
+            <Button onClick={signOut} variant="outline" size="sm">
+              Sign Out
+            </Button>
+          </div>
+        </div>
+
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {messages.map((message, index) => (
-            <div key={message.id} ref={index === messages.length - 1 ? lastMessageRef : undefined}>
+            <div key={message.id}>
               <MessageBubble
                 message={message}
                 showTyping={index === messages.length - 1 && message.type === 'ai'}
