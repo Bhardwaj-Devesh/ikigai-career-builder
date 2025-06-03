@@ -1,13 +1,27 @@
-
 import { ChatInterface } from '@/components/ChatInterface';
 import { LandingPage } from '@/components/LandingPage';
 import { IkigaiDiagram } from '@/components/IkigaiDiagram';
 import { useAuth } from '@/components/AuthProvider';
 import { useIkigaiStore } from '@/store/ikigaiStore';
+import { useState } from 'react';
+import Sidebar from '@/components/Sidebar';
+import ReportViewer from '@/components/ReportViewer';
 
 const Index = () => {
   const { user, loading } = useAuth();
   const { isComplete } = useIkigaiStore();
+  const [currentView, setCurrentView] = useState<'chat' | 'report' | null>('chat');
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+
+  const handleViewReport = (reportId: string) => {
+    setSelectedReportId(reportId);
+    setCurrentView('report');
+  };
+
+  const handleCloseReport = () => {
+    setSelectedReportId(null);
+    setCurrentView('chat');
+  };
 
   if (loading) {
     return (
@@ -48,24 +62,36 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-140px)]">
-          {/* Chat Interface */}
-          <div className="lg:col-span-2 bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
-            <ChatInterface />
+      {/* Main Content Area and Sidebars */}
+      <div className="max-w-[1920px] mx-auto px-4 py-6">
+        <div className="grid grid-cols-12 gap-6 h-[calc(100vh-140px)]">
+          {/* Left Sidebar */}
+          <div className="col-span-2 bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-4">
+            <Sidebar
+              onViewReport={handleViewReport}
+              onContinueChat={() => setCurrentView('chat')}
+              currentView={currentView}
+            />
           </div>
 
-          {/* Ikigai Diagram Sidebar */}
-          <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
-            <IkigaiDiagram />
-            
-            {/* Inspirational Quote */}
-            <div className="mt-8 p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl">
-              <blockquote className="text-sm text-gray-700 italic text-center">
-                "The place where your needs, abilities, and desires intersect is your life's purpose."
-              </blockquote>
-              <p className="text-xs text-gray-500 text-center mt-2">- Ancient Japanese Wisdom</p>
+          {/* Main Content - Chat or Report */}
+          <div className="col-span-7 bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+            {currentView === 'chat' && <ChatInterface key="chat-interface" />}
+            {currentView === 'report' && selectedReportId && (
+              <ReportViewer key={`report-viewer-${selectedReportId}`} reportId={selectedReportId} onClose={handleCloseReport} />
+            )}
+          </div>
+
+          {/* Right Sidebar */}
+          <div className="col-span-3 bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 flex flex-col">
+            <div className="flex-grow flex flex-col justify-end">
+              <IkigaiDiagram />
+              <div className="mt-8 p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl">
+                <blockquote className="text-sm text-gray-700 italic text-center">
+                  "The place where your needs, abilities, and desires intersect is your life's purpose."
+                </blockquote>
+                <p className="text-xs text-gray-500 text-center mt-2">- Ancient Japanese Wisdom</p>
+              </div>
             </div>
           </div>
         </div>

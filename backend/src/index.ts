@@ -1,18 +1,25 @@
 import express, { Request, Response } from 'express';
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
-
-dotenv.config();
+import resumeRoutes from './routes/resume';
+import reportsRoutes from './routes/reports';
+import { config, supabase } from './config';
 
 const app = express();
 app.use(express.json());
+
+// Update CORS configuration to allow your Vercel frontend
 app.use(cors({
-  origin: 'http://localhost:8081',
-  methods: ['POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: config.server.frontendUrl,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id']
 }));
+
+// Mount resume routes
+app.use('/api/resume', resumeRoutes);
+
+// Mount reports routes
+app.use('/api/reports', reportsRoutes);
 
 interface IkigaiAnalysisRequest {
   ikigaiResponseId: string;
@@ -109,26 +116,12 @@ async function parseGroqResponse(response: any, maxRetries: number = 1): Promise
 app.post('/analyze', async (req: Request, res: Response) => {
   try {
     const groqApiKey = process.env.GROQ_API_KEY;
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!groqApiKey || !supabaseUrl || !supabaseKey) {
+    if (!groqApiKey) {
       throw new Error('Required environment variables are not configured');
     }
 
     console.log('Starting career analysis generation...');
-
-    // Create Supabase client with service role key
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-        detectSessionInUrl: false
-      },
-      db: {
-        schema: 'public'
-      }
-    });
 
     const { ikigaiResponseId, responses }: IkigaiAnalysisRequest = req.body;
 
@@ -380,7 +373,12 @@ Use current 2024 market data, be specific with numbers, companies, and actionabl
   }
 });
 
-const PORT = process.env.PORT || 3000;
+// Start the server
+const PORT = parseInt(config.server.port as string, 10) || 3000; // Ensure PORT is a number
+// Revert to default behavior which should listen on all interfaces (IPv4 and IPv6)
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-}); 
+  console.log(`Server is running on port ${PORT}`);
+});
+
+// Export the Express API
+export default app; 

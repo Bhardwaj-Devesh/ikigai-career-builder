@@ -1,13 +1,99 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, LineChart, Line } from 'recharts';
+import { useAuth } from '@/components/AuthProvider';
+import { useToast } from '@/components/ui/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface CareerReportProps {
   analysis: any;
   onClose: () => void;
+  showSaveButton?: boolean;
 }
 
-export const CareerReport = ({ analysis, onClose }: CareerReportProps) => {
+export const CareerReport = ({ analysis, onClose, showSaveButton = false }: CareerReportProps) => {
+  const { user, session } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Get main title based on career recommendations
+  const getReportTitle = () => {
+    if (analysis.careerRecommendations?.[0]?.title) {
+      return `${analysis.careerRecommendations[0].title}`;
+    }
+    return 'Your Personalized Career Development Roadmap';
+  };
+
+  // Get subtitle based on report type and date
+  const getReportSubtitle = () => {
+    const reportType = analysis.report_type || 'career_analysis';
+    const date = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    switch (reportType) {
+      case 'career_analysis':
+        return `Career Analysis Report • ${date}`;
+      case 'skill_assessment':
+        return `Skills Assessment Report • ${date}`;
+      case 'market_analysis':
+        return `Market Analysis Report • ${date}`;
+      default:
+        return `Career Insights Report • ${date}`;
+    }
+  };
+
+  const handleSaveToProfile = async () => {
+    if (!user?.id || !session?.access_token) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to save reports to your profile.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await fetch('http://localhost:3000/api/reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          reportData: analysis,
+          reportType: 'career_analysis'
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save report');
+      }
+
+      // Invalidate the reports query to refresh the list
+      await queryClient.invalidateQueries({ queryKey: ['userReports', user.id] });
+
+      toast({
+        title: "Report saved",
+        description: "Your career analysis has been saved to your profile.",
+        variant: "default",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error saving report",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const ikigaiData = [
     { name: 'Passion', score: analysis.ikigaiAlignment.passionScore },
     { name: 'Mission', score: analysis.ikigaiAlignment.missionScore },
@@ -23,14 +109,32 @@ export const CareerReport = ({ analysis, onClose }: CareerReportProps) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-800">Your Career Analysis Report</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
-          >
-            ×
-          </button>
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-800">{getReportTitle()}</h2>
+              <p className="text-sm text-gray-600 mt-1 font-medium">{getReportSubtitle()}</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              {showSaveButton && (
+                <button
+                  onClick={handleSaveToProfile}
+                  disabled={isSaving}
+                  className={`bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors ${
+                    isSaving ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isSaving ? 'Saving...' : 'Save to Profile'}
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="p-6 space-y-8">
@@ -284,9 +388,6 @@ export const CareerReport = ({ analysis, onClose }: CareerReportProps) => {
               <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
                 Share Report
               </button>
-              <button className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
-                Save to Profile
-              </button>
             </div>
           </section>
         </div>
@@ -294,3 +395,5 @@ export const CareerReport = ({ analysis, onClose }: CareerReportProps) => {
     </div>
   );
 };
+
+export default CareerReport;

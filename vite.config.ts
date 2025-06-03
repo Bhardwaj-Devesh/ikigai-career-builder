@@ -7,7 +7,15 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    port: 8081,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:3000',
+        changeOrigin: true,
+        // Optional: Rewrite path if your backend expects /api/resume/upload, not just /resume/upload
+        // rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
   },
   plugins: [
     react(),

@@ -223,7 +223,8 @@ export const ChatInterface = () => {
       {showReport && analysisReport && (
         <CareerReport 
           analysis={analysisReport} 
-          onClose={() => setShowReport(false)} 
+          onClose={() => setShowReport(false)}
+          showSaveButton={true}
         />
       )}
     </>
