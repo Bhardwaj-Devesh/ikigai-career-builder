@@ -116,7 +116,7 @@ export const useIkigaiStore = create<IkigaiStore>((set, get) => ({
       console.log('Responses saved successfully:', responseData);
 
       // Call the analysis API
-      const response = await fetch('http://localhost:3000/analyze', {
+      const response = await fetch('https://ikigai-backend-36q9.onrender.com/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

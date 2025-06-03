@@ -27,7 +27,7 @@ async function testResumeUpload() {
     formData.append('resume', fs.createReadStream(testResumePath));
 
     // 3. Upload resume
-    const response = await fetch('http://localhost:3000/api/resume/upload', {
+    const response = await fetch('https://ikigai-backend-36q9.onrender.com/api/resume/upload', {
       method: 'POST',
       headers: {
         'x-user-id': testUser.id,
@@ -40,7 +40,7 @@ async function testResumeUpload() {
     console.log('Upload Result:', result);
 
     // 4. Get the uploaded resume data
-    const getResponse = await fetch(`http://localhost:3000/api/resume/user-resume/${testUser.id}`);
+    const getResponse = await fetch(`https://ikigai-backend-36q9.onrender.com/api/resume/user-resume/${testUser.id}`);
     const resumeData = await getResponse.json();
     console.log('Resume Data:', resumeData);
 

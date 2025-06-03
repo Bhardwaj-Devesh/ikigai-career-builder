@@ -104,7 +104,7 @@ export const ChatInterface = () => {
     });
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}/analyze`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'https://ikigai-backend-36q9.onrender.com'}/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
