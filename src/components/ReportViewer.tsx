@@ -21,7 +21,7 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ reportId, onClose }) => {
         throw new Error('Authentication required');
       }
 
-      const response = await fetch(`/api/reports/report/${reportId}`, {
+      const response = await fetch(`${import.meta.env.BACKEND_URL}/api/reports/report/${reportId}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }

@@ -1,27 +1,32 @@
 // / <reference lib="deno.ns" />
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-// import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-// import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import path from 'path';
 
-dotenv.config();
+// Load environment variables from .env file
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+// Environment variables with fallbacks
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://ikigai-career.vercel.app';
+const FRONTEND_URL_DEV = process.env.FRONTEND_URL_DEV || 'http://localhost:8081';
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
 const app = express();
 app.use(express.json());
+
+// CORS configuration
 app.use(cors({
-  origin: 'http://localhost:8081/', // Your frontend URL
+  origin: NODE_ENV === 'production' ? FRONTEND_URL : FRONTEND_URL_DEV,
   methods: ['POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-client-info', 'apikey'],
+  credentials: true
 }));
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// Log environment configuration
+console.log('Environment:', NODE_ENV);
+console.log('Frontend URL:', NODE_ENV === 'production' ? FRONTEND_URL : FRONTEND_URL_DEV);
 
 interface IkigaiAnalysisRequest {
   ikigaiResponseId: string;
@@ -33,18 +38,18 @@ interface IkigaiAnalysisRequest {
   };
 }
 
-app.post('/analyze', async (req, res) => {
+app.post('/analyze', async (req: Request, res: Response) => {
   if (req.method === 'OPTIONS') {
-    return res.set(corsHeaders).status(200).end();
+    return res.status(200).end();
   }
 
   try {
-    const groqApiKey = process.env.GROQ_API_KEY || 'your-groq-api-key-here';
-    const supabaseUrl = process.env.SUPABASE_URL || 'your-supabase-url-here';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'your-supabase-service-role-key-here';
+    const groqApiKey = process.env.GROQ_API_KEY;
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!groqApiKey) {
-      throw new Error('GROQ_API_KEY not configured');
+    if (!groqApiKey || !supabaseUrl || !supabaseKey) {
+      throw new Error('Required environment variables are not configured');
     }
 
     console.log('Starting career analysis generation...');
@@ -258,10 +263,10 @@ Use current 2024 market data, be specific with numbers, companies, and actionabl
       analysis: parsedAnalysis
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in generate-career-analysis:', error);
     res.status(500).json({
-      error: error.message,
+      error: error instanceof Error ? error.message : 'An unknown error occurred',
       success: false
     });
   }
@@ -270,4 +275,6 @@ Use current 2024 market data, be specific with numbers, companies, and actionabl
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${NODE_ENV}`);
+  console.log(`Frontend URL: ${NODE_ENV === 'production' ? FRONTEND_URL : FRONTEND_URL_DEV}`);
 });
