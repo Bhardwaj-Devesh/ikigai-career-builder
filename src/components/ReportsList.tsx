@@ -26,7 +26,7 @@ const ReportsList: React.FC<ReportsListProps> = ({ onViewReport }) => {
       if (!user?.id || !session?.access_token) {
         return [];
       }
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reports/user/${user.id}`, {
+      const response = await fetch(`/api/reports/user/${user.id}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }

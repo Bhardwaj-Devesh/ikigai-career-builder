@@ -57,7 +57,7 @@ export const CareerReport = ({ analysis, onClose, showSaveButton = false }: Care
 
     setIsSaving(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reports`, {
+      const response = await fetch(`/api/reports`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

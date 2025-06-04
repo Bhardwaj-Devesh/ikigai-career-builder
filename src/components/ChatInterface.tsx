@@ -104,7 +104,7 @@ export const ChatInterface = () => {
     });
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/analyze`, {
+      const response = await fetch(`/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
