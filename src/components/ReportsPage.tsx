@@ -25,7 +25,7 @@ const ReportsPage: React.FC = () => {
       if (!selectedReportId || !session?.access_token) {
         return null;
       }
-      const response = await fetch(`${import.meta.env.BACKEND_URL}/api/reports/${selectedReportId}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reports/${selectedReportId}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }

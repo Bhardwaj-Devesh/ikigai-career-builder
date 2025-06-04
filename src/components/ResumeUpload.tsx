@@ -100,7 +100,7 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({
       const formData = new FormData();
       formData.append('resume', selectedFile);
 
-      const response = await fetch(`${import.meta.env.BACKEND_URL}/api/resume/upload`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/resume/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
