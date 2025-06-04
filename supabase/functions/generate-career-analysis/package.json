@@ -4,9 +4,9 @@
   "description": "Career analysis generator",
   "main": "index.js",
   "scripts": {
-    "dev": "deno run --allow-net --allow-env index.ts",
-    "build": "deno compile index.ts",
-    "start": "deno run --allow-net --allow-env index.ts"
+    "dev": "nodemon index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",
@@ -19,7 +19,6 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.16",
-    "@types/deno": "^1.37.0",
     "nodemon": "^3.0.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
