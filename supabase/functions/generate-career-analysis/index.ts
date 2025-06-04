@@ -1,27 +1,7 @@
 // / <reference lib="deno.ns" />
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-// import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-// import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import express from 'express';
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import cors from 'cors';
-
-dotenv.config();
-
-const app = express();
-app.use(express.json());
-app.use(cors({
-  origin: 'http://localhost:8081/', // Your frontend URL
-  methods: ['POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { corsHeaders } from '../_shared/cors.ts';
 
 interface IkigaiAnalysisRequest {
   ikigaiResponseId: string;
@@ -33,24 +13,25 @@ interface IkigaiAnalysisRequest {
   };
 }
 
-app.post('/analyze', async (req, res) => {
+serve(async (req: Request) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return res.set(corsHeaders).status(200).end();
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const groqApiKey = process.env.GROQ_API_KEY || 'your-groq-api-key-here';
-    const supabaseUrl = process.env.SUPABASE_URL || 'your-supabase-url-here';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'your-supabase-service-role-key-here';
+    const { ikigaiResponseId, responses } = await req.json() as IkigaiAnalysisRequest;
+    const groqApiKey = Deno.env.get('GROQ_API_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!groqApiKey) {
-      throw new Error('GROQ_API_KEY not configured');
+    if (!groqApiKey || !supabaseUrl || !supabaseKey) {
+      throw new Error('Required environment variables are not configured');
     }
 
     console.log('Starting career analysis generation...');
 
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const { ikigaiResponseId, responses }: IkigaiAnalysisRequest = req.body;
 
     console.log('Analysis request for:', ikigaiResponseId);
     console.log('Responses:', responses);
@@ -252,22 +233,34 @@ Use current 2024 market data, be specific with numbers, companies, and actionabl
 
     console.log('Career analysis completed successfully, report ID:', reportData.id);
 
-    res.json({
-      success: true,
-      reportId: reportData.id,
-      analysis: parsedAnalysis
-    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        reportId: reportData.id,
+        analysis: parsedAnalysis
+      }),
+      {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
   } catch (error) {
     console.error('Error in generate-career-analysis:', error);
-    res.status(500).json({
-      error: error.message,
-      success: false
-    });
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : 'An unknown error occurred',
+        success: false
+      }),
+      {
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
   }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
 });
