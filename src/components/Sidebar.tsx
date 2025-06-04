@@ -34,9 +34,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onViewReport, onContinueChat, current
       
       setIsLoadingResume(true);
       try {
-        const response = await fetch(`/api/resume/user-resume/${user.id}`, {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/resume/user-resume/${user.id}`, {
+          method: 'GET',
+          credentials: 'include',
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
         });
 
@@ -81,10 +85,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onViewReport, onContinueChat, current
     if (!user?.id || !session?.access_token || !resumeInfo?.id) return;
 
     try {
-      const response = await fetch(`/api/resume/${resumeInfo.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/resume/${resumeInfo.id}`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
       });
 

@@ -8,11 +8,31 @@ import { config } from './config';
 const app = express();
 
 // CORS configuration
+const corsOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : [
+      'https://ikigai-career.vercel.app',  // Production frontend
+      'http://localhost:8081',             // Development frontend
+      'http://localhost:3000'              // Alternative development port
+    ];
+
+console.log('Configured CORS Origins:', corsOrigins);
+console.log('Raw CORS_ORIGIN env var:', process.env.CORS_ORIGIN);
+
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'https://ikigai-backend-36q9.onrender.com',
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    console.log('Incoming request origin:', origin);
+    if (!origin || corsOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked request from origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'Accept'],
+  credentials: true,
+  maxAge: 86400 // Cache preflight requests for 24 hours
 };
 
 app.use(cors(corsOptions));
