@@ -117,6 +117,7 @@ export const useIkigaiStore = create<IkigaiStore>((set, get) => ({
 
       // Call the analysis API
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/analyze`, {
+        
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
