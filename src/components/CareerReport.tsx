@@ -57,7 +57,7 @@ export const CareerReport = ({ analysis, onClose, showSaveButton = false }: Care
 
     setIsSaving(true);
     try {
-      const response = await fetch('https://ikigai-backend-36q9.onrender.com/api/reports', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reports`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

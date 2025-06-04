@@ -10,8 +10,9 @@ export default defineConfig(({ mode }) => ({
     port: 8081,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:3000',
+        target: 'https://ikigai-career-backend.onrender.com',
         changeOrigin: true,
+        secure: true,
         // Optional: Rewrite path if your backend expects /api/resume/upload, not just /resume/upload
         // rewrite: (path) => path.replace(/^\/api/, ''),
       },
